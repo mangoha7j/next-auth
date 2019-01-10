@@ -4,6 +4,7 @@
 'use strict'
 
 const passport = require('passport')
+const querystring = require('querystring');
 
 module.exports = ({
   expressApp = null, // Express Server
@@ -169,6 +170,9 @@ module.exports = ({
                   user.email = profile.email
                 }
 
+                // TODO profle.email 과 비교 
+                // req._wb_need_to_link = true;
+
                 // Save Profile ID, Access Token and Refresh Token values
                 // to the users local account, which links the accounts.
                 user[providerName.toLowerCase()] = {
@@ -234,11 +238,15 @@ module.exports = ({
                 // potential security exploit allowing someone to pre-register 
                 // or create an account elsewhere for another users email 
                 // address then trying to sign in from it, so don't do that.
-                if (user) return next(null, false)
+                if (user) {
+                  // 로그인 후 link로 유도 
+                  req._wb_need_to_login = true;
+                  return next(null, false)
+                }
                 
                 // If an account does not exist, create one for them and return
                 // a user object to passport, which will sign them in.
-                return functions.insert({
+                /* return functions.insert({
                   name: profile.name,
                   email: profile.email,
                   [providerName.toLowerCase()]: {
@@ -252,7 +260,19 @@ module.exports = ({
                 })
                 .catch(err => {
                   return next(err, false)
-                })
+                }) */
+                // sign-up 유도 
+                const identityData = {
+                  providerName: providerName.toLowerCase(),
+                  providerUserId: profile.id,
+                  username: profile.name,
+                  email: profile.email,
+                  phone: null,
+                  profile: null,
+                };
+                req._wb_need_to_sign_up = true;
+                req._wb_identity = identityData;
+                return next(null, false);
               })
             }
           }
@@ -280,12 +300,39 @@ module.exports = ({
     expressApp.get(`${pathPrefix}/oauth/${providerName.toLowerCase()}`, passport.authenticate(providerName, providerOptions))
     
     // Route to call back to after signing in
-    expressApp.get(`${pathPrefix}/oauth/${providerName.toLowerCase()}/callback`,
-      passport.authenticate(providerName, {
-        successRedirect: `${pathPrefix}/callback?action=signin&service=${providerName}`,
-        failureRedirect: `${pathPrefix}/error?action=signin&type=oauth&service=${providerName}`
-      })
-    )
+    expressApp.get(`${pathPrefix}/oauth/${providerName.toLowerCase()}/callback`, 
+      (req, res, next) => {
+        passport.authenticate(providerName, (err, user, info) => {
+
+          if (req._wb_need_to_sign_up) {
+            // idnetity 정보와 함께 sign-up으로 이동 
+            const query = querystring.stringify(req._wb_identity);
+            req.session._wb_identity = req._wb_identity;
+            return res.redirect(`${pathPrefix}/signup?${query}`);
+          }
+
+          if (req._wb_need_to_link) {
+            // link setting 이동 
+            return res.redirect(`/settings`);
+          }
+
+          if (req._wb_need_to_login) {
+            // 기존 user로 로그인 후 링크 유도 
+            return res.redirect(`${pathPrefix}/error?action=signin&type=oauth&service=${providerName}`);
+          }
+
+          if (err) {
+            return res.redirect(`${pathPrefix}/error?action=signin&type=oauth&service=${providerName}`);
+          }
+          
+          if (!user) {
+            return res.redirect(`${pathPrefix}/signup`);
+          }
+          else {
+            return res.redirect(`${pathPrefix}/callback?action=signin&service=${providerName}`);
+          }
+        })(req, res, next);
+    });
   
     // Route to post to unlink accounts
     expressApp.post(`${pathPrefix}/oauth/${providerName.toLowerCase()}/unlink`, (req, res, next) => {
