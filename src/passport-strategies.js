@@ -329,7 +329,13 @@ module.exports = ({
             return res.redirect(`${pathPrefix}/signup`);
           }
           else {
-            return res.redirect(`${pathPrefix}/callback?action=signin&service=${providerName}`);
+            req.logIn(user, err => {
+              if (err) {
+                console.log(`req.logIn err] ${err.message}`);
+                return res.redirect(`${pathPrefix}/error?action=signin&type=oauth&service=${providerName}`);
+              }
+              return res.redirect(`${pathPrefix}/callback?action=signin&service=${providerName}`);
+            });
           }
         })(req, res, next);
     });
