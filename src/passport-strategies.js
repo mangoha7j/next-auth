@@ -262,13 +262,15 @@ module.exports = ({
                   return next(err, false)
                 }) */
                 // sign-up 유도 
+                const picture = providerName.toLowerCase() == 'facebook' ? 
+                  `https://graph.facebook.com/${profile.id}/picture?type=large` : null;
                 const identityData = {
                   providerName: providerName.toLowerCase(),
                   providerUserId: profile.id,
                   username: profile.name,
                   email: profile.email,
                   phone: null,
-                  profile: null,
+                  profile: picture,
                 };
                 req._wb_need_to_sign_up = true;
                 req._wb_identity = identityData;
