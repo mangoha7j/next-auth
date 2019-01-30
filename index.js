@@ -360,13 +360,20 @@ module.exports = (nextApp, {
           return functions.update(user)
         } else {
           // If the user does not exist, create a new account with the token.
-          return functions.insert({
+          /*return functions.insert({
             email: email,
             emailToken: token
-          })
+          })*/
+          return null; // client에서 오류메세지 표시할 수 있도록 
         }
       })
       .then(user => {
+
+      	if (!user) {
+      		return res.status(401).json({ success: false });
+      	}
+
+
         functions.sendSignInEmail({
           email: user.email,
           url: url,

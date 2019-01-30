@@ -318,7 +318,7 @@ module.exports = ({
 
           if (req._wb_need_to_login) {
             // 기존 user로 로그인 후 링크 유도 
-            return res.redirect(`${pathPrefix}/error?action=signin&type=oauth&service=${providerName}`);
+            return res.redirect(`${pathPrefix}/error?action=signin&type=oauth&service=${providerName}&data=login`);
           }
 
           if (err) {
