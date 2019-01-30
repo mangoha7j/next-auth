@@ -413,7 +413,7 @@ module.exports = (nextApp, {
         }
       })
       .then(user => {
-        // If the user object is valid, sign the user in
+        /*// If the user object is valid, sign the user in
         req.logIn(user, (err) => {
           if (err) return res.redirect(`${pathPrefix}/error?action=signin&type=token-invalid`)
           if (req.xhr) {
@@ -423,7 +423,10 @@ module.exports = (nextApp, {
             // If normal form POST (from client without JS) return redirect
             return res.redirect(`${pathPrefix}/callback?action=signin&service=email`)
           }
-        })
+        })*/
+        // 로그인 없이 사용자 정보만 전달 
+        req.session.sptemp = user.id;
+        return res.redirect(`${pathPrefix}/set-password`);
       })
       .catch(err => {
         return res.redirect(`${pathPrefix}/error?action=signin&type=token-invalid`)
