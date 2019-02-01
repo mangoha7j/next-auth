@@ -264,11 +264,14 @@ module.exports = ({
                 // sign-up 유도 
                 const picture = providerName.toLowerCase() == 'facebook' ? 
                   `https://graph.facebook.com/${profile.id}/picture?type=large` : null;
+                const email = 
+                  profile.email && !profile.email.match(/.*@localhost\.localdomain$/) ?
+                  '' : profile.email;
                 const identityData = {
                   providerName: providerName.toLowerCase(),
                   providerUserId: profile.id,
                   username: profile.name,
-                  email: profile.email,
+                  email: email,
                   phone: null,
                   profile: picture,
                 };
