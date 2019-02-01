@@ -266,7 +266,7 @@ module.exports = ({
                   `https://graph.facebook.com/${profile.id}/picture?type=large` : null;
                 const email = 
                   profile.email && !profile.email.match(/.*@localhost\.localdomain$/) ?
-                  '' : profile.email;
+                  profile.email : '';
                 const identityData = {
                   providerName: providerName.toLowerCase(),
                   providerUserId: profile.id,
